@@ -25,7 +25,12 @@ const currency = (n) =>
     maximumFractionDigits: 0,
   }).format(n || 0);
 
-const todayKey = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+const todayKey = () => {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10); // YYYY-MM-DD local
+};
+
 const STORAGE_KEY = "fastfood_orders_v2"; // v2: múltiples productos por pedido
 const loadOrders = () => {
   try {
