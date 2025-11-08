@@ -41,7 +41,7 @@ const saveOrders = (data) =>
 const DEFAULT_PRODUCTS = [
   { id: "perro_sencillo", name: "Perro Sencillo", price: 6000, image: "/img/perro sencillo.jpg" },
   { id: "choriperro", name: "Choriperro", price: 9000, image: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop" },
-  { id: "perro_suizo", name: "Perro Suizo", price: 10000, image: "https://images.unsplash.com/photo-1550317138-10000687a72b?w=800&auto=format&fit=crop" },
+  { id: "perro_suizo", name: "Perro Suizo", price: 10000, image: "/img/perro suizo.jpg" },
   { id: "perro_mixto_S&S", name: "Perro Mixto S&S", price: 11000, image: "/img/Perro Mixto.jpg" },
   { id: "tocisuizo", name: "Tocisuizo", price: 12000, image: "/img/Tocisuizo.jpg" },
   { id: "italo_suizo", name: "Italo Suizo", price: 12000, image: "/img/italo suizo.jpg" },
@@ -78,7 +78,7 @@ export default function App() {
   const [note, setNote] = useState(""); // observaciones (opcional)
 
   const dayKey = todayKey();
-  const orders = ordersByDay[dayKey] || [];
+  const orders = useMemo(() => ordersByDay[dayKey] || [], [ordersByDay, dayKey]);
 
   useEffect(() => saveOrders(ordersByDay), [ordersByDay]);
 
@@ -416,7 +416,6 @@ export default function App() {
                 <div className="text-sm font-medium mb-3">Selecciona productos (puedes sumar varios)</div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 pr-2 overflow-y-auto">
                   {products.map((p) => {
-                    const q = cart[p.id]?.qty || 0;
                     return (
                       <div
                         key={p.id}
