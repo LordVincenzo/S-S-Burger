@@ -39,18 +39,18 @@ const saveOrders = (data) =>
 
 // Productos de ejemplo — reemplace las imágenes por las suyas
 const DEFAULT_PRODUCTS = [
-  { id: "perro_sencillo", name: "Perro Sencillo", price: 6000, image: "/img/perro sencillo.jpg" },
-  { id: "choriperro", name: "Choriperro", price: 9000, image: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop" },
-  { id: "perro_suizo", name: "Perro Suizo", price: 10000, image: "/img/perro suizo.jpg" },
-  { id: "perro_mixto_S&S", name: "Perro Mixto S&S", price: 11000, image: "/img/Perro Mixto.jpg" },
-  { id: "tocisuizo", name: "Tocisuizo", price: 12000, image: "/img/Tocisuizo.jpg" },
-  { id: "italo_suizo", name: "Italo Suizo", price: 12000, image: "/img/italo suizo.jpg" },
-  { id: "S&S_burguer", name: "S&S Burguer", price: 13000, image: "/img/S&S burguer.jpg" },
-  { id: "S&S_maxi_burguer", name: "S&S Maxi Burguer", price: 16000, image: "/img/S&S maxi burguer.jpg" },
-  { id: "gaseosa", name: "Gaseosa", price: 3000, image: "/img/Gaseosa.png" },
-  { id: "combo_sencillo", name: "Combo Sencillo", price: 9000, image: "/img/combo sencillo.jpg" },
-  { id: "combo_tocisuizo", name: "Combo Tocisuizo", price: 15000, image: "/img/combo tocisuizo.jpg" },
-  { id: "combo_S&S_burguer", name: "Combo S&S Burguer", price: 16000, image: "/img/combo S&S burguer.png" },
+  { id: "perro_sencillo", name: "Perro Sencillo", price: 6000, image: "/img/perro_sencillo.jpg" },
+  { id: "choriperro", name: "Choriperro", price: 9000, image: "/img/choriperro.jpg" },
+  { id: "perro_suizo", name: "Perro Suizo", price: 10000, image: "/img/perro_suizo.jpg" },
+  { id: "perro_mixto_S&S", name: "Perro Mixto S&S", price: 11000, image: "/img/perro_mixto_ss.jpg" },
+  { id: "tocisuizo", name: "Tocisuizo", price: 12000, image: "/img/tocisuizo.jpg" },
+  { id: "italo_suizo", name: "Italo Suizo", price: 12000, image: "/img/italo_suizo.jpg" },
+  { id: "S&S_burguer", name: "S&S Burguer", price: 13000, image: "/img/s_s_burguer.jpg" },
+  { id: "S&S_maxi_burguer", name: "S&S Maxi Burguer", price: 16000, image: "/img/s_s_maxi_burguer.jpg" },
+  { id: "gaseosa", name: "Gaseosa", price: 3000, image: "/img/gaseosa.png" },
+  { id: "combo_sencillo", name: "Combo Sencillo", price: 9000, image: "/img/combo_sencillo.jpg" },
+  { id: "combo_tocisuizo", name: "Combo Tocisuizo", price: 15000, image: "/img/combo_tocisuizo.jpg" },
+  { id: "combo_S&S_burguer", name: "Combo S&S Burguer", price: 16000, image: "/img/combo_s_s_burguer.png" },
 ];
 
 // Calcula total de una orden (compatible con esquema antiguo y nuevo)
