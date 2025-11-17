@@ -64,6 +64,13 @@ const orderTotal = (o) => {
   return (o?.product?.price || 0) * (o?.qty || 0);
 };
 
+const kitchenStyles = {
+  pending: "bg-gray-50 border-gray-300 text-gray-700",
+  preparing: "bg-blue-50 border-blue-300 text-blue-700",
+  ready: "bg-emerald-50 border-emerald-300 text-emerald-700",
+};
+
+
 export default function App() {
   const [products] = useState(DEFAULT_PRODUCTS);
   const [ordersByDay, setOrdersByDay] = useState(loadOrders());
@@ -112,6 +119,7 @@ export default function App() {
       phone: phone.trim(),
       items, // NUEVO: múltiples productos
       paid: !!isPaid,
+      kitchen: "pending", // <-- NUEVO: 'pending' | 'preparing' | 'ready'
       note: note.trim(),
     };
     const updated = { ...ordersByDay, [dayKey]: [newOrder, ...orders] };
@@ -121,6 +129,7 @@ export default function App() {
 
   const removeOrder = (id) => setOrdersByDay({ ...ordersByDay, [dayKey]: orders.filter(o => o.id !== id) });
   const togglePaid = (id) => setOrdersByDay({ ...ordersByDay, [dayKey]: orders.map(o => o.id === id ? { ...o, paid: !o.paid } : o) });
+  const setKitchen = (id, value) => { setOrdersByDay(prev => ({ ...prev, [dayKey]: (prev[dayKey] || []).map(o => o.id === id ? { ...o, kitchen: value } : o) })); };
 
   // === Inicio: filtro y totales del día ===
   const filtered = useMemo(() => orders.filter(o => (
@@ -238,6 +247,7 @@ export default function App() {
   const cartItems = Object.values(cart);
   const cartTotal = cartItems.reduce((acc, it) => acc + it.product.price * it.qty, 0);
 
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 text-[13px] md:text-[14px]">
       <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px]">
@@ -288,6 +298,8 @@ export default function App() {
           </div>
         </div>
 
+
+
         {/* Lista de pedidos del día */}
         <div className="bg-white rounded-3xl shadow divide-y">
           {filtered.length === 0 && (
@@ -311,6 +323,16 @@ export default function App() {
                   {o.paid ? <CheckCircle size={16} /> : <Circle size={16} />}
                   {o.paid ? 'Pagado' : 'Pendiente'}
                 </button>
+                <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border ${kitchenStyles[o.kitchen || 'pending']}`}>
+                  <select
+                    value={o.kitchen || 'pending'}
+                    onChange={(e) => setKitchen(o.id, e.target.value)}
+                    className="bg-transparent text-xs outline-none">
+                    <option value="pending">Sin iniciar</option>
+                    <option value="preparing">En preparación</option>
+                    <option value="ready">Entregado</option>
+                  </select>
+                </div>
                 <button onClick={() => removeOrder(o.id)} className="p-2 rounded-xl bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" title="Eliminar">
                   <Trash2 size={16} />
                 </button>
