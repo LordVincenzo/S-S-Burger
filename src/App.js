@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import {
   CheckCircle,
@@ -98,7 +97,7 @@ export default function App() {
     method: "cash", // cash | nequi
     ref: "",        // referencia / comprobante (opcional)
   });
-  const receiptRef = React.useRef(null);
+  const receiptRef = useRef(null);
   const [receiptOrder, setReceiptOrder] = useState(null);
   const dayKey = todayKey();
   const orders = useMemo(() => ordersByDay[dayKey] || [], [ordersByDay, dayKey]);
@@ -302,7 +301,7 @@ export default function App() {
     setReceiptOrder(order);
 
     // Esperamos a que React pinte el comprobante oculto
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 80));
 
     const element = receiptRef.current;
     if (!element) return;
@@ -329,61 +328,6 @@ export default function App() {
     a.download = `comprobante_${fecha}_${safeName || "pedido"}.png`;
     a.click();
   };
-
-  const downloadReceiptPDF = (order) => {
-    const doc = new jsPDF();
-
-    const at = new Date(order.at);
-    const fecha = at.toISOString().slice(0, 10);
-    const hora = at.toLocaleTimeString();
-
-    const items = order.items
-      ? order.items.map(it => `${it.qty}x ${it.product.name} (${currency(it.product.price * it.qty)})`)
-      : [`${order.qty}x ${order.product?.name || ""} (${currency(orderTotal(order))})`];
-
-    const method = order.paymentMethod || "cash";
-    const methodLabel = method === "nequi" ? "Nequi" : "Efectivo";
-
-    let y = 14;
-    doc.setFontSize(14);
-    doc.text("Comprobante de pago", 14, y); y += 8;
-
-    doc.setFontSize(10);
-    doc.text("S&S Burger & Hot dogs", 14, y); y += 6;
-    doc.text(`Pedido ID: ${order.id}`, 14, y); y += 6;
-    doc.text(`Fecha: ${fecha}  Hora: ${hora}`, 14, y); y += 6;
-    doc.text(`Cliente: ${order.customerName || "Sin nombre"}`, 14, y); y += 6;
-
-    if (order.phone) { doc.text(`Teléfono: ${order.phone}`, 14, y); y += 6; }
-
-    doc.text(`Método de pago: ${methodLabel}`, 14, y); y += 6;
-    if (method === "nequi" && order.paymentRef) {
-      doc.text(`Comprobante/Ref: ${order.paymentRef}`, 14, y); y += 6;
-    }
-
-    y += 4;
-    doc.setFontSize(11);
-    doc.text("Detalle:", 14, y); y += 7;
-
-    doc.setFontSize(10);
-    items.forEach((line) => {
-      if (y > 280) { doc.addPage(); y = 14; }
-      doc.text(`• ${line}`, 14, y);
-      y += 6;
-    });
-
-    y += 6;
-    doc.setFontSize(12);
-    doc.text(`TOTAL: ${currency(orderTotal(order))}`, 14, y);
-
-    const safeName = (order.customerName || "cliente")
-      .replace(/[^\w\s-]/g, "")
-      .trim()
-      .slice(0, 30);
-
-    doc.save(`comprobante_${fecha}_${safeName || "pedido"}.pdf`);
-  };
-
 
   const cartItems = Object.values(cart);
   const cartTotal = cartItems.reduce((acc, it) => acc + it.product.price * it.qty, 0);
