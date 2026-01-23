@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import {
   CheckCircle,
   Circle,
@@ -45,17 +47,19 @@ const saveOrders = (data) =>
 // Productos de ejemplo — reemplace las imágenes por las suyas
 const DEFAULT_PRODUCTS = [
   { id: "perro_sencillo", name: "Perro Sencillo", price: 6000, image: "/img/perro_sencillo.jpg" },
-  { id: "choriperro", name: "Choriperro", price: 9000, image: "/img/choriperro.jpg" },
-  { id: "perro_suizo", name: "Perro Suizo", price: 10000, image: "/img/perro_suizo.jpg" },
-  { id: "perro_mixto_S&S", name: "Perro Mixto S&S", price: 11000, image: "/img/perro_mixto_ss.jpg" },
-  { id: "tocisuizo", name: "Tocisuizo", price: 12000, image: "/img/tocisuizo2.jpg" },
-  { id: "italo_suizo", name: "Italo Suizo", price: 12000, image: "/img/italo_suizo.jpg" },
-  { id: "S&S_burguer", name: "S&S Burguer", price: 13000, image: "/img/s_s_burguer.jpg" },
-  { id: "S&S_maxi_burguer", name: "S&S Maxi Burguer", price: 16000, image: "/img/s_s_maxi_burguer.jpg" },
+  { id: "choriperro", name: "Choriperro", price: 10000, image: "/img/choriperro.jpg" },
+  { id: "perro_suizo", name: "Perro Suizo", price: 12000, image: "/img/perro_suizo.jpg" },
+  { id: "perro_mixto_S&S", name: "Perro Mixto S&S", price: 12000, image: "/img/perro_mixto_ss.jpg" },
+  { id: "tocisuizo", name: "Tocisuizo", price: 14000, image: "/img/tocisuizo2.jpg" },
+  { id: "italo_suizo", name: "Italo Suizo", price: 14000, image: "/img/italo_suizo.jpg" },
+  { id: "Burguer_clasica", name: "Hamburguesa clasica", price: 12000, image: "" },
+  { id: "S&S_burguer", name: "S&S Burguer", price: 14000, image: "/img/s_s_burguer.jpg" },
+  { id: "S&S_maxi_burguer", name: "S&S Maxi Burguer", price: 17000, image: "/img/s_s_maxi_burguer.jpg" },
   { id: "gaseosa", name: "Gaseosa", price: 3000, image: "/img/gaseosa2.png" },
+  { id: "papasfritas", name: "Papitas Fritas", price: 5000, image: "/img/papitas.jpg" },
   { id: "combo_sencillo", name: "Combo Sencillo", price: 9000, image: "/img/combo_sencillo.jpg" },
-  { id: "combo_tocisuizo", name: "Combo Tocisuizo", price: 15000, image: "/img/combo_tocisuizo.jpg" },
-  { id: "combo_S&S_burguer", name: "Combo S&S Burguer", price: 16000, image: "/img/combo_s_s_burguer.png" },
+  { id: "combo_tocisuizo", name: "Combo Tocisuizo", price: 17000, image: "/img/combo_tocisuizo.jpg" },
+  { id: "combo_S&S_burguer", name: "Combo S&S Burguer", price: 17000, image: "/img/combo_s_s_burguer.png" },
 ];
 
 // Calcula total de una orden (compatible con esquema antiguo y nuevo)
@@ -88,7 +92,14 @@ export default function App() {
   const [cart, setCart] = useState({}); // { [productId]: {product, qty} }
   const [isPaid, setIsPaid] = useState(false);
   const [note, setNote] = useState(""); // observaciones (opcional)
-
+  const [payModal, setPayModal] = useState({
+    open: false,
+    orderId: null,
+    method: "cash", // cash | nequi
+    ref: "",        // referencia / comprobante (opcional)
+  });
+  const receiptRef = React.useRef(null);
+  const [receiptOrder, setReceiptOrder] = useState(null);
   const dayKey = todayKey();
   const orders = useMemo(() => ordersByDay[dayKey] || [], [ordersByDay, dayKey]);
 
@@ -96,13 +107,14 @@ export default function App() {
 
   // Bloquea el scroll del body cuando hay modal abierto
   useEffect(() => {
-    const lock = showNew || showHistory; // si no tienes showHistory, deja sólo showNew
+    const lock = showNew || showHistory || payModal.open;
+    // si no tienes showHistory, deja sólo showNew
     if (lock) {
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = prev; };
     }
-  }, [showNew, showHistory]);
+  }, [showNew, showHistory, payModal.open]);
 
   // === Carrito ===
   const addToCart = (p) => setCart((c) => ({ ...c, [p.id]: { product: p, qty: (c[p.id]?.qty || 0) + 1 } }));
@@ -128,7 +140,49 @@ export default function App() {
   };
 
   const removeOrder = (id) => setOrdersByDay({ ...ordersByDay, [dayKey]: orders.filter(o => o.id !== id) });
-  const togglePaid = (id) => setOrdersByDay({ ...ordersByDay, [dayKey]: orders.map(o => o.id === id ? { ...o, paid: !o.paid } : o) });
+  const openPayModal = (order) => {
+    // Si ya está pagado: al tocarlo, lo desmarca (opcional).
+    // Si prefieres que NO desmarque, me dices y lo ajusto.
+    if (order.paid) {
+      setOrdersByDay({
+        ...ordersByDay,
+        [dayKey]: orders.map(o =>
+          o.id === order.id
+            ? { ...o, paid: false, paymentMethod: "", paymentRef: "" }
+            : o
+        ),
+      });
+      return;
+    }
+
+    setPayModal({
+      open: true,
+      orderId: order.id,
+      method: "cash",
+      ref: "",
+    });
+  };
+
+  const confirmPayment = () => {
+    const { orderId, method, ref } = payModal;
+
+    setOrdersByDay({
+      ...ordersByDay,
+      [dayKey]: orders.map(o =>
+        o.id === orderId
+          ? {
+            ...o,
+            paid: true,
+            paymentMethod: method,
+            paymentRef: method === "nequi" ? (ref || "") : "",
+          }
+          : o
+      ),
+    });
+
+    setPayModal({ open: false, orderId: null, method: "cash", ref: "" });
+  };
+
   const setKitchen = (id, value) => { setOrdersByDay(prev => ({ ...prev, [dayKey]: (prev[dayKey] || []).map(o => o.id === id ? { ...o, kitchen: value } : o) })); };
 
   // === Inicio: filtro y totales del día ===
@@ -243,6 +297,93 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `historial_completo.csv`; a.click(); URL.revokeObjectURL(url);
   };
+  const downloadReceiptImage = async (order) => {
+    // Guardamos el pedido que se va a renderizar
+    setReceiptOrder(order);
+
+    // Esperamos a que React pinte el comprobante oculto
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const element = receiptRef.current;
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,              // más nitidez
+      backgroundColor: "#ffffff",
+      useCORS: true,
+    });
+
+    const image = canvas.toDataURL("image/png");
+
+    // Descargar la imagen
+    const a = document.createElement("a");
+    const at = new Date(order.at);
+    const fecha = at.toISOString().slice(0, 10);
+
+    const safeName = (order.customerName || "cliente")
+      .replace(/[^\w\s-]/g, "")
+      .trim()
+      .slice(0, 30);
+
+    a.href = image;
+    a.download = `comprobante_${fecha}_${safeName || "pedido"}.png`;
+    a.click();
+  };
+
+  const downloadReceiptPDF = (order) => {
+    const doc = new jsPDF();
+
+    const at = new Date(order.at);
+    const fecha = at.toISOString().slice(0, 10);
+    const hora = at.toLocaleTimeString();
+
+    const items = order.items
+      ? order.items.map(it => `${it.qty}x ${it.product.name} (${currency(it.product.price * it.qty)})`)
+      : [`${order.qty}x ${order.product?.name || ""} (${currency(orderTotal(order))})`];
+
+    const method = order.paymentMethod || "cash";
+    const methodLabel = method === "nequi" ? "Nequi" : "Efectivo";
+
+    let y = 14;
+    doc.setFontSize(14);
+    doc.text("Comprobante de pago", 14, y); y += 8;
+
+    doc.setFontSize(10);
+    doc.text("S&S Burger & Hot dogs", 14, y); y += 6;
+    doc.text(`Pedido ID: ${order.id}`, 14, y); y += 6;
+    doc.text(`Fecha: ${fecha}  Hora: ${hora}`, 14, y); y += 6;
+    doc.text(`Cliente: ${order.customerName || "Sin nombre"}`, 14, y); y += 6;
+
+    if (order.phone) { doc.text(`Teléfono: ${order.phone}`, 14, y); y += 6; }
+
+    doc.text(`Método de pago: ${methodLabel}`, 14, y); y += 6;
+    if (method === "nequi" && order.paymentRef) {
+      doc.text(`Comprobante/Ref: ${order.paymentRef}`, 14, y); y += 6;
+    }
+
+    y += 4;
+    doc.setFontSize(11);
+    doc.text("Detalle:", 14, y); y += 7;
+
+    doc.setFontSize(10);
+    items.forEach((line) => {
+      if (y > 280) { doc.addPage(); y = 14; }
+      doc.text(`• ${line}`, 14, y);
+      y += 6;
+    });
+
+    y += 6;
+    doc.setFontSize(12);
+    doc.text(`TOTAL: ${currency(orderTotal(order))}`, 14, y);
+
+    const safeName = (order.customerName || "cliente")
+      .replace(/[^\w\s-]/g, "")
+      .trim()
+      .slice(0, 30);
+
+    doc.save(`comprobante_${fecha}_${safeName || "pedido"}.pdf`);
+  };
+
 
   const cartItems = Object.values(cart);
   const cartTotal = cartItems.reduce((acc, it) => acc + it.product.price * it.qty, 0);
@@ -254,7 +395,7 @@ export default function App() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold">S&S Burger — {dayKey}</h1>
+            <h1 className="text-3xl font-bold">S&S Burger & Hot dogs — {dayKey}</h1>
             <p className="text-slate-600">Comida rápida.</p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -319,10 +460,26 @@ export default function App() {
                   {o.note && (
                     <div className="text-xs text-slate-500 italic mt-1">📝 {o.note}</div>)}
                 </div>
-                <button onClick={() => togglePaid(o.id)} className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border ${o.paid ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-700'}`}>
+                <button
+                  onClick={() => openPayModal(o)}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border ${o.paid
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                    : "bg-amber-50 border-amber-300 text-amber-700"
+                    }`}
+                >
                   {o.paid ? <CheckCircle size={16} /> : <Circle size={16} />}
-                  {o.paid ? 'Pagado' : 'Pendiente'}
+                  {o.paid ? "Pagado" : "Pendiente"}
                 </button>
+                {o.paid && o.paymentMethod === "nequi" && (
+                  <button
+                    onClick={() => downloadReceiptImage(o)}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white hover:bg-slate-100"
+                    title="Descargar comprobante"
+                  >
+                    <Download size={16} />
+                    Comprobante
+                  </button>
+                )}
                 <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border ${kitchenStyles[o.kitchen || 'pending']}`}>
                   <select
                     value={o.kitchen || 'pending'}
@@ -604,6 +761,180 @@ export default function App() {
           </motion.div>
         </div>
       )}
+
+      {/* Modal Método de Pago */}
+      {payModal.open && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+          onClick={() => setPayModal(p => ({ ...p, open: false }))}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-[520px] bg-white rounded-3xl shadow-2xl p-5"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-lg font-semibold">Marcar como pagado</div>
+              <button
+                onClick={() => setPayModal(p => ({ ...p, open: false }))}
+                className="p-2 rounded-xl hover:bg-slate-100"
+              >
+                <X />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="text-sm text-slate-600">Selecciona método:</div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPayModal(p => ({ ...p, method: "cash" }))}
+                  className={`px-4 py-2 rounded-2xl border ${payModal.method === "cash"
+                    ? "bg-slate-900 text-white"
+                    : "bg-white"
+                    }`}
+                >
+                  Efectivo
+                </button>
+
+                <button
+                  onClick={() => setPayModal(p => ({ ...p, method: "nequi" }))}
+                  className={`px-4 py-2 rounded-2xl border ${payModal.method === "nequi"
+                    ? "bg-slate-900 text-white"
+                    : "bg-white"
+                    }`}
+                >
+                  Nequi
+                </button>
+              </div>
+
+              {payModal.method === "nequi" && (
+                <div>
+                  <div className="text-sm font-medium">
+                    Comprobante / Referencia (opcional)
+                  </div>
+                  <input
+                    className="w-full px-4 py-3 rounded-xl border"
+                    placeholder="Ej: 123456"
+                    value={payModal.ref}
+                    onChange={(e) =>
+                      setPayModal(p => ({ ...p, ref: e.target.value }))
+                    }
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                onClick={() => setPayModal(p => ({ ...p, open: false }))}
+                className="px-5 py-2.5 rounded-2xl border"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={confirmPayment}
+                className="px-5 py-2.5 rounded-2xl bg-slate-900 text-white"
+              >
+                Confirmar pago
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      {/* Comprobante oculto para generar imagen */}
+      <div className="fixed -left-[9999px] top-0">
+        {receiptOrder && (
+          <div
+            ref={receiptRef}
+            className="w-[420px] bg-white rounded-2xl border shadow p-4 text-slate-900"
+          >
+            {/* Header */}
+            <div className="rounded-xl bg-slate-900 text-white p-4">
+              <div className="text-sm opacity-90">S&S Burger & Hot dogs</div>
+              <div className="text-xl font-bold">Comprobante</div>
+              <div className="text-xs opacity-80 mt-1">
+                {new Date(receiptOrder.at).toLocaleString()}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="mt-4 space-y-1 text-sm">
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500">Cliente</span>
+                <span className="font-medium text-right">{receiptOrder.customerName || "Sin nombre"}</span>
+              </div>
+
+              {receiptOrder.phone && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-500">Teléfono</span>
+                  <span className="font-medium text-right">{receiptOrder.phone}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500">Método</span>
+                <span className="font-medium text-right">
+                  {receiptOrder.paymentMethod === "nequi" ? "Nequi" : "Efectivo"}
+                </span>
+              </div>
+
+              {receiptOrder.paymentMethod === "nequi" && receiptOrder.paymentRef && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-500">Referencia</span>
+                  <span className="font-medium text-right">{receiptOrder.paymentRef}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500">Pedido ID</span>
+                <span className="font-mono text-[11px] text-right">{receiptOrder.id}</span>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="mt-4">
+              <div className="text-sm font-semibold mb-2">Detalle</div>
+              <div className="space-y-3">
+                {(receiptOrder.items || []).map((it, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-start p-4 rounded-xl border bg-slate-50"
+                  >
+                    <div className="min-w-0 pr-3">
+                      <div className="font-semibold text-sm">
+                        {it.qty}x {it.product.name}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {currency(it.product.price)} c/u
+                      </div>
+                    </div>
+
+                    <div className="font-bold text-sm whitespace-nowrap">
+                      {currency(it.product.price * it.qty)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3 flex justify-between">
+              <span className="font-semibold">TOTAL</span>
+              <span className="font-bold">{currency(orderTotal(receiptOrder))}</span>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 text-center text-xs text-slate-500">
+              Gracias por tu compra ❤️<br />
+              Este comprobante no equivale a factura
+            </div>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
