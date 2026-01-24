@@ -94,8 +94,9 @@ export default function App() {
   const [payModal, setPayModal] = useState({
     open: false,
     orderId: null,
-    method: "cash", // cash | nequi
-    ref: "",        // referencia / comprobante (opcional)
+    method: "cash",     // cash | nequi | bancolombia | daviplata | other
+    customMethod: "",   // texto cuando es "other"
+    ref: "",            // referencia opcional
   });
   const receiptRef = useRef(null);
   const [receiptOrder, setReceiptOrder] = useState(null);
@@ -130,9 +131,15 @@ export default function App() {
       phone: phone.trim(),
       items, // NUEVO: múltiples productos
       paid: !!isPaid,
+
+      // ✅ NUEVO: si lo marcan pagado al crear, queda en efectivo por defecto
+      paymentMethod: isPaid ? "cash" : "",
+      paymentRef: "",
+
       kitchen: "pending", // <-- NUEVO: 'pending' | 'preparing' | 'ready'
       note: note.trim(),
     };
+
     const updated = { ...ordersByDay, [dayKey]: [newOrder, ...orders] };
     setOrdersByDay(updated);
     setCustomerName(""); setPhone(""); setCart({}); setIsPaid(false); setNote(""); setShowNew(false);
@@ -158,12 +165,16 @@ export default function App() {
       open: true,
       orderId: order.id,
       method: "cash",
+      customMethod: "",
       ref: "",
     });
   };
 
   const confirmPayment = () => {
-    const { orderId, method, ref } = payModal;
+    const { orderId, method, ref, customMethod } = payModal;
+
+    const methodFinal =
+      method === "other" ? (customMethod || "Otro") : method;
 
     setOrdersByDay({
       ...ordersByDay,
@@ -172,14 +183,14 @@ export default function App() {
           ? {
             ...o,
             paid: true,
-            paymentMethod: method,
-            paymentRef: method === "nequi" ? (ref || "") : "",
+            paymentMethod: methodFinal, // <- guardamos el texto final
+            paymentRef: ref || "",      // <- ref opcional para cualquier método
           }
           : o
       ),
     });
 
-    setPayModal({ open: false, orderId: null, method: "cash", ref: "" });
+    setPayModal({ open: false, orderId: null, method: "cash", customMethod: "", ref: "" });
   };
 
   const setKitchen = (id, value) => { setOrdersByDay(prev => ({ ...prev, [dayKey]: (prev[dayKey] || []).map(o => o.id === id ? { ...o, kitchen: value } : o) })); };
@@ -196,6 +207,24 @@ export default function App() {
     return { total, cobrados, pendientes };
   }, [orders]);
 
+  const PAYMENT_METHODS = [
+    { id: "cash", label: "Efectivo" },
+    { id: "nequi", label: "Nequi" },
+    { id: "bancolombia", label: "Bancolombia" },
+    { id: "daviplata", label: "Daviplata" },
+    { id: "other", label: "Otro" },
+  ];
+
+  const prettyMethod = (m) => {
+    const map = {
+      cash: "Efectivo",
+      nequi: "Nequi",
+      bancolombia: "Bancolombia",
+      daviplata: "Daviplata",
+    };
+    return map[m] || m || "Efectivo";
+  };
+
   // === WhatsApp resumen día actual ===
   const summaryText = () => {
     const lines = [
@@ -205,7 +234,11 @@ export default function App() {
       "",
       ...orders.map(o => {
         const itemsText = o.items ? o.items.map(it => `${it.qty}x ${it.product.name}`).join(", ") : `${o.qty}x ${o.product.name}`;
-        return `• ${o.customerName} — ${itemsText} (${currency(orderTotal(o))}) ${o.paid ? "[PAGADO]" : "[PENDIENTE]"}`;
+        const pagoTxt = o.paid
+          ? `[PAGADO${o.paymentMethod ? ` - ${prettyMethod(o.paymentMethod)}` : ""}${o.paymentRef ? ` - Ref:${o.paymentRef}` : ""}]`
+          : "[PENDIENTE]";
+
+        return `• ${o.customerName} — ${itemsText} (${currency(orderTotal(o))}) ${pagoTxt}`;
       })
     ];
     return lines.join("\n");
@@ -412,9 +445,11 @@ export default function App() {
                     }`}
                 >
                   {o.paid ? <CheckCircle size={16} /> : <Circle size={16} />}
-                  {o.paid ? "Pagado" : "Pendiente"}
+                  {o.paid
+                    ? `Pagado${o.paymentMethod ? ` (${prettyMethod(o.paymentMethod)})` : ""}`
+                    : "Pendiente"}
                 </button>
-                {o.paid && o.paymentMethod === "nequi" && (
+                {o.paid && (
                   <button
                     onClick={() => downloadReceiptImage(o)}
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white hover:bg-slate-100"
@@ -731,43 +766,40 @@ export default function App() {
             <div className="space-y-3">
               <div className="text-sm text-slate-600">Selecciona método:</div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPayModal(p => ({ ...p, method: "cash" }))}
-                  className={`px-4 py-2 rounded-2xl border ${payModal.method === "cash"
-                    ? "bg-slate-900 text-white"
-                    : "bg-white"
-                    }`}
-                >
-                  Efectivo
-                </button>
-
-                <button
-                  onClick={() => setPayModal(p => ({ ...p, method: "nequi" }))}
-                  className={`px-4 py-2 rounded-2xl border ${payModal.method === "nequi"
-                    ? "bg-slate-900 text-white"
-                    : "bg-white"
-                    }`}
-                >
-                  Nequi
-                </button>
+              <div className="flex flex-wrap gap-2">
+                {PAYMENT_METHODS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setPayModal(p => ({ ...p, method: m.id }))}
+                    className={`px-4 py-2 rounded-2xl border ${payModal.method === m.id ? "bg-slate-900 text-white" : "bg-white"
+                      }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
               </div>
 
-              {payModal.method === "nequi" && (
+              {payModal.method === "other" && (
                 <div>
-                  <div className="text-sm font-medium">
-                    Comprobante / Referencia (opcional)
-                  </div>
+                  <div className="text-sm font-medium">¿Qué banco/app?</div>
                   <input
                     className="w-full px-4 py-3 rounded-xl border"
-                    placeholder="Ej: 123456"
-                    value={payModal.ref}
-                    onChange={(e) =>
-                      setPayModal(p => ({ ...p, ref: e.target.value }))
-                    }
+                    placeholder="Ej: Banco X / Transferencia / QR..."
+                    value={payModal.customMethod}
+                    onChange={(e) => setPayModal(p => ({ ...p, customMethod: e.target.value }))}
                   />
                 </div>
               )}
+
+              <div>
+                <div className="text-sm font-medium">Comprobante / Referencia (opcional)</div>
+                <input
+                  className="w-full px-4 py-3 rounded-xl border"
+                  placeholder="Ej: 1234568910"
+                  value={payModal.ref}
+                  onChange={(e) => setPayModal(p => ({ ...p, ref: e.target.value }))}
+                />
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 mt-5">
@@ -821,11 +853,11 @@ export default function App() {
               <div className="flex justify-between gap-3">
                 <span className="text-slate-500">Método</span>
                 <span className="font-medium text-right">
-                  {receiptOrder.paymentMethod === "nequi" ? "Nequi" : "Efectivo"}
+                  {prettyMethod(receiptOrder.paymentMethod)}
                 </span>
               </div>
 
-              {receiptOrder.paymentMethod === "nequi" && receiptOrder.paymentRef && (
+              {receiptOrder.paymentRef && (
                 <div className="flex justify-between gap-3">
                   <span className="text-slate-500">Referencia</span>
                   <span className="font-medium text-right">{receiptOrder.paymentRef}</span>
