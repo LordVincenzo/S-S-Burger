@@ -59,9 +59,9 @@ const DEFAULT_PRODUCTS = [
   { id: "combo_sencillo", name: "Combo Sencillo", price: 9000, image: "/img/combo_sencillo.jpg" },
   { id: "combo_tocisuizo", name: "Combo Tocisuizo", price: 17000, image: "/img/combo_tocisuizo.jpg" },
   { id: "combo_S&S_burguer", name: "Combo S&S Burguer", price: 17000, image: "/img/combo_s_s_burguer.png" },
-  { id: "Salchipapa", name: "S&S Mixta Salchipapa", price: 19000, image: "/img/salchipapa" },
-  { id: "domicilio_1", name: "Domicilio", price: 1000, image: "/img/domicilio" },
-  { id: "domicilio_2", name: "Domicilio", price: 2000, image: "/img/domicilio" },
+  { id: "Salchipapa", name: "S&S Mixta Salchipapa", price: 19000, image: "/img/salchipapa.png" },
+  { id: "domicilio_1", name: "Domicilio", price: 1000, image: "/img/domicilio.png" },
+  { id: "domicilio_2", name: "Domicilio", price: 2000, image: "/img/domicilio.png" },
 ];
 
 // Calcula total de una orden (compatible con esquema antiguo y nuevo)
