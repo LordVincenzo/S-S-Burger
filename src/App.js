@@ -55,10 +55,13 @@ const DEFAULT_PRODUCTS = [
   { id: "S&S_burguer", name: "S&S Burguer", price: 14000, image: "/img/s_s_burguer.jpg" },
   { id: "S&S_maxi_burguer", name: "S&S Maxi Burguer", price: 17000, image: "/img/s_s_maxi_burguer.jpg" },
   { id: "gaseosa", name: "Gaseosa", price: 3000, image: "/img/gaseosa2.png" },
-  { id: "papasfritas", name: "Papitas Fritas", price: 5000, image: "/img/papitas.jpg" },
+  { id: "papasfritas", name: "Papitas Fritas", price: 4000, image: "/img/papitas.jpg" },
   { id: "combo_sencillo", name: "Combo Sencillo", price: 9000, image: "/img/combo_sencillo.jpg" },
   { id: "combo_tocisuizo", name: "Combo Tocisuizo", price: 17000, image: "/img/combo_tocisuizo.jpg" },
   { id: "combo_S&S_burguer", name: "Combo S&S Burguer", price: 17000, image: "/img/combo_s_s_burguer.png" },
+  { id: "Salchipapa", name: "S&S Mixta Salchipapa", price: 19000, image: "/img/salchipapa" },
+  { id: "domicilio_1", name: "Domicilio", price: 1000, image: "/img/domicilio" },
+  { id: "domicilio_2", name: "Domicilio", price: 2000, image: "/img/domicilio" },
 ];
 
 // Calcula total de una orden (compatible con esquema antiguo y nuevo)
