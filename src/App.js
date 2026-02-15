@@ -103,6 +103,8 @@ export default function App() {
   });
   const receiptRef = useRef(null);
   const [receiptOrder, setReceiptOrder] = useState(null);
+  const invoiceRef = useRef(null);
+  const [invoiceOrder, setInvoiceOrder] = useState(null);
   const dayKey = todayKey();
   const orders = useMemo(() => ordersByDay[dayKey] || [], [ordersByDay, dayKey]);
 
@@ -332,6 +334,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `historial_completo.csv`; a.click(); URL.revokeObjectURL(url);
   };
+
   const downloadReceiptImage = async (order) => {
     // Guardamos el pedido que se va a renderizar
     setReceiptOrder(order);
@@ -365,18 +368,63 @@ export default function App() {
     a.click();
   };
 
+  const downloadInvoiceImage = async (order) => {
+    setInvoiceOrder(order);
+
+    // Esperamos a que React pinte la factura oculta
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    const element = invoiceRef.current;
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+    });
+
+    const image = canvas.toDataURL("image/png");
+
+    const a = document.createElement("a");
+    const at = new Date(order.at);
+    const fecha = at.toISOString().slice(0, 10);
+
+    const safeName = (order.customerName || "cliente")
+      .replace(/[^\w\s-]/g, "")
+      .trim()
+      .slice(0, 30);
+
+    a.href = image;
+    a.download = `factura_${fecha}_${safeName || "pedido"}.png`;
+    a.click();
+  };
+
   const cartItems = Object.values(cart);
   const cartTotal = cartItems.reduce((acc, it) => acc + it.product.price * it.qty, 0);
 
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 text-[13px] md:text-[14px]">
-      <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px]">
+    <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 text-[13px] md:text-[14px] relative overflow-hidden">
+      {/* Fondo con logo (watermark) */}
+      <img
+        src="/img/logo_ss.png"
+        alt="Logo fondo"
+        className="pointer-events-none select-none absolute inset-0 m-auto w-[700px] md:w-[900px] opacity-[0.05]"
+        style={{ transform: "rotate(-10deg)" }}
+      />
+      <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] relative z-10">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">S&S Burger & Hot dogs — {dayKey}</h1>
-            <p className="text-slate-600">Comida rápida.</p>
+          <div className="flex items-center gap-3">
+            <img
+              src="/img/logo_ss.png"
+              alt="Logo S&S"
+              className="w-12 h-12 rounded-2xl object-contain bg-white shadow p-1"
+            />
+            <div>
+              <h1 className="text-3xl font-bold">S&S Burger & Hot dogs — {dayKey}</h1>
+              <p className="text-slate-600">Comida rápida.</p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-3">
             <button onClick={() => setShowNew(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 text-white shadow hover:opacity-90">
@@ -452,7 +500,17 @@ export default function App() {
                     ? `Pagado${o.paymentMethod ? ` (${prettyMethod(o.paymentMethod)})` : ""}`
                     : "Pendiente"}
                 </button>
-                {o.paid && (
+
+                {!o.paid ? (
+                  <button
+                    onClick={() => downloadInvoiceImage(o)}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white hover:bg-slate-100"
+                    title="Descargar factura"
+                  >
+                    <Download size={16} />
+                    Factura
+                  </button>
+                ) : (
                   <button
                     onClick={() => downloadReceiptImage(o)}
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white hover:bg-slate-100"
@@ -462,6 +520,7 @@ export default function App() {
                     Comprobante
                   </button>
                 )}
+
                 <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border ${kitchenStyles[o.kitchen || 'pending']}`}>
                   <select
                     value={o.kitchen || 'pending'}
@@ -828,14 +887,33 @@ export default function App() {
         {receiptOrder && (
           <div
             ref={receiptRef}
-            className="w-[420px] bg-white rounded-2xl border shadow p-4 text-slate-900"
+            className="w-[420px] bg-white rounded-2xl border shadow p-4 text-slate-900 relative overflow-hidden"
           >
+            <img
+              src="/img/logo_ss.png"
+              alt="Logo"
+              crossOrigin="anonymous"
+              className="absolute inset-0 m-auto w-[360px] opacity-[0.08] pointer-events-none select-none"
+              style={{ transform: "rotate(-12deg)" }}
+            />
             {/* Header */}
-            <div className="rounded-xl bg-slate-900 text-white p-4">
-              <div className="text-sm opacity-90">S&S Burger & Hot dogs</div>
-              <div className="text-xl font-bold">Comprobante</div>
-              <div className="text-xs opacity-80 mt-1">
-                {new Date(receiptOrder.at).toLocaleString()}
+            <div className="rounded-xl bg-slate-900 text-white p-4 relative">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm opacity-90">S&S Burger & Hot dogs</div>
+                  <div className="text-xl font-bold">Comprobante</div>
+                  <div className="text-xs opacity-80 mt-1">
+                    {new Date(receiptOrder.at).toLocaleString()}
+                  </div>
+                </div>
+
+                {/* Logo visible */}
+                <img
+                  src="/img/logo_ss.png"
+                  alt="Logo S&S"
+                  crossOrigin="anonymous"
+                  className="w-14 h-14 rounded-xl bg-white/10 p-1 object-contain"
+                />
               </div>
             </div>
 
@@ -909,6 +987,115 @@ export default function App() {
             <div className="mt-4 text-center text-xs text-slate-500">
               Gracias por tu compra ❤️<br />
               Este comprobante no equivale a factura
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Factura oculta para generar imagen */}
+      <div className="fixed -left-[9999px] top-0">
+        {invoiceOrder && (
+          <div
+            ref={invoiceRef}
+            className="w-[420px] bg-white rounded-2xl border shadow p-4 text-slate-900 relative overflow-hidden"
+          >
+            {/* Watermark (logo de fondo) */}
+            <img
+              src="/img/logo_ss.png"
+              alt="Logo"
+              className="absolute inset-0 m-auto w-[360px] opacity-[0.08] pointer-events-none select-none"
+              style={{ transform: "rotate(-12deg)" }}
+            />
+
+            {/* Header */}
+            <div className="rounded-xl bg-slate-900 text-white p-4 relative">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm opacity-90">S&S Burger & Hot dogs</div>
+                  <div className="text-xl font-bold">
+                    Factura — {invoiceOrder.customerName || "Sin nombre"}
+                  </div>
+                  <div className="text-xs opacity-80 mt-1">
+                    {new Date(invoiceOrder.at).toLocaleString()}
+                  </div>
+                </div>
+
+                {/* Logo visible */}
+                <img
+                  src="/img/logo_ss.png"
+                  alt="Logo S&S"
+                  className="w-14 h-14 rounded-xl bg-white/10 p-1 object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="mt-4 space-y-1 text-sm relative">
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500">Cliente</span>
+                <span className="font-medium text-right">
+                  {invoiceOrder.customerName || "Sin nombre"}
+                </span>
+              </div>
+
+              {invoiceOrder.phone && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-500">Teléfono</span>
+                  <span className="font-medium text-right">{invoiceOrder.phone}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500">Estado</span>
+                <span className="font-medium text-right">
+                  {invoiceOrder.paid ? "PAGADO" : "PENDIENTE"}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500">Pedido ID</span>
+                <span className="font-mono text-[11px] text-right">{invoiceOrder.id}</span>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="mt-4 relative">
+              <div className="text-sm font-semibold mb-2">Detalle</div>
+              <div className="space-y-3">
+                {(invoiceOrder.items || []).map((it, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-start p-4 rounded-xl border bg-slate-50"
+                  >
+                    <div className="min-w-0 pr-3">
+                      <div className="font-semibold text-sm">
+                        {it.qty}x {it.product.name}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {currency(it.product.price)} c/u
+                      </div>
+                    </div>
+
+                    <div className="font-bold text-sm whitespace-nowrap">
+                      {currency(it.product.price * it.qty)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 p-3 flex justify-between relative">
+              <span className="font-semibold">TOTAL</span>
+              <span className="font-bold">{currency(orderTotal(invoiceOrder))}</span>
+            </div>
+
+            {/* Mensaje */}
+            <div className="mt-4 text-center text-xs text-slate-600 relative">
+              Gracias por tu compra ❤️<br />
+              <span className="text-slate-500">
+                Esta factura es un soporte interno de venta.
+              </span>
             </div>
           </div>
         )}
