@@ -51,7 +51,7 @@ const DEFAULT_PRODUCTS = [
   { id: "perro_mixto_S&S", name: "Perro Mixto S&S", price: 12000, image: "/img/perro_mixto_ss.jpg" },
   { id: "tocisuizo", name: "Tocisuizo", price: 14000, image: "/img/tocisuizo2.jpg" },
   { id: "italo_suizo", name: "Italo Suizo", price: 14000, image: "/img/italo_suizo.jpg" },
-  { id: "Burguer_clasica", name: "Hamburguesa clasica con papitas", price: 15000, image: "" },
+  { id: "Burguer_clasica", name: "Hamburguesa clasica con papitas", price: 15000, image: "/img/hamburgesa_clasica.png" },
   { id: "S&S_burguer", name: "S&S Burguer con papitas", price: 18000, image: "/img/s_s_burguer.jpg" },
   { id: "S&S_maxi_burguer", name: "S&S Maxi Burguer con papitas", price: 22000, image: "/img/s_s_maxi_burguer.jpg" },
   { id: "gaseosa", name: "Gaseosa", price: 3000, image: "/img/gaseosa2.png" },
@@ -978,9 +978,9 @@ export default function App() {
             </div>
 
             {/* Total */}
-            <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3 flex justify-between">
-              <span className="font-semibold">TOTAL</span>
-              <span className="font-bold">{currency(orderTotal(receiptOrder))}</span>
+            <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-4 flex items-center justify-between">
+              <span className="font-semibold leading-none">TOTAL</span>
+              <span className="font-bold leading-none">{currency(orderTotal(receiptOrder))}</span>
             </div>
 
             {/* Footer */}
@@ -1013,7 +1013,7 @@ export default function App() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-xl font-bold">S&S Burger & Hot dogs</div>
-                   <div className="text-sm opacity-90">Wsapp 3245447651</div>
+                  <div className="text-sm opacity-90">Wsapp 3245447651</div>
                   <div className="text-xl font-bold leading-tight">
                     Factura — {invoiceOrder.customerName || "Sin nombre"}
                   </div>
