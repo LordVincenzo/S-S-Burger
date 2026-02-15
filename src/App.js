@@ -900,7 +900,7 @@ export default function App() {
             <div className="rounded-xl bg-slate-900 text-white p-4 relative">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm opacity-90">S&S Burger & Hot dogs</div>
+                  <div className="text-xl font-bold">S&S Burger & Hot dogs</div>
                   <div className="text-xl font-bold">Comprobante</div>
                   <div className="text-xs opacity-80 mt-1">
                     {new Date(receiptOrder.at).toLocaleString()}
@@ -986,7 +986,8 @@ export default function App() {
             {/* Footer */}
             <div className="mt-4 text-center text-xs text-slate-500">
               Gracias por tu compra ❤️<br />
-              Este comprobante no equivale a factura
+              Este comprobante no equivale a factura <br />
+              Escribenos para mas domicilios al 3245447651 ❤️
             </div>
           </div>
         )}
@@ -1011,8 +1012,9 @@ export default function App() {
             <div className="rounded-xl bg-slate-900 text-white p-4 relative">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm opacity-90">S&S Burger & Hot dogs</div>
-                  <div className="text-xl font-bold">
+                  <div className="text-xl font-bold">S&S Burger & Hot dogs</div>
+                   <div className="text-sm opacity-90">Wsapp 3245447651</div>
+                  <div className="text-xl font-bold leading-tight">
                     Factura — {invoiceOrder.customerName || "Sin nombre"}
                   </div>
                   <div className="text-xs opacity-80 mt-1">
