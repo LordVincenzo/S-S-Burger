@@ -60,6 +60,7 @@ const DEFAULT_PRODUCTS = [
   { id: "combo_tocisuizo", name: "Combo Tocisuizo", price: 17000, image: "/img/combo_tocisuizo.jpg" },
   { id: "combo_S&S_burguer", name: "Combo S&S Burguer", price: 17000, image: "/img/combo_s_s_burguer.png" },
   { id: "Salchipapa", name: "S&S Mixta Salchipapa", price: 20000, image: "/img/salchipapa.png" },
+  { id: "Choripapa", name: "Choripapa", price: 14000, image: "/img/" },
   { id: "domicilio_1", name: "Domicilio", price: 1000, image: "/img/domicilio.png" },
   { id: "domicilio_2", name: "Domicilio", price: 2000, image: "/img/domicilio.png" },
 ];
