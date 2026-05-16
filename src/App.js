@@ -549,17 +549,63 @@ function OrderCard({ order, onTogglePaid, onRemove, onKitchenChange, onDownloadR
             style={{ flex: 1 }}
             onClick={onTogglePaid}
           >
-            {order.paid ? <><Icons.X size={13} /> Desmarcar</> : <><Icons.Wallet size={13} /> Cobrar</>}
+            {order.paid ? (
+              <>
+                <Icons.X size={13} /> Desmarcar
+              </>
+            ) : (
+              <>
+                <Icons.Wallet size={13} /> Cobrar
+              </>
+            )}
           </button>
+
           {!order.paid ? (
-            <button className="btn btn-ghost btn-icon btn-sm" onClick={onDownloadInvoice} title="Descargar factura" style={{ fontSize: 11, gap: 4, padding: "8px 10px", width: "auto" }}>
+            <button
+              className="btn btn-ghost btn-icon btn-sm"
+              onClick={onDownloadInvoice}
+              title="Descargar factura"
+              style={{
+                fontSize: 11,
+                gap: 4,
+                padding: "8px 10px",
+                width: "auto",
+              }}
+            >
               <Icons.FileText size={14} /> Factura
             </button>
           ) : (
-            <button className="btn btn-ghost btn-icon btn-sm" onClick={onDownloadReceipt} title="Descargar comprobante" style={{ fontSize: 11, gap: 4, padding: "8px 10px", width: "auto" }}>
+            <button
+              className="btn btn-ghost btn-icon btn-sm"
+              onClick={onDownloadReceipt}
+              title="Descargar comprobante"
+              style={{
+                fontSize: 11,
+                gap: 4,
+                padding: "8px 10px",
+                width: "auto",
+              }}
+            >
               <Icons.Download size={14} /> Comprobante
             </button>
           )}
+
+          <button
+            className="btn btn-danger btn-icon btn-sm"
+            onClick={() => {
+              if (window.confirm("¿Seguro que quieres eliminar este pedido?")) {
+                onRemove();
+              }
+            }}
+            title="Eliminar pedido"
+            aria-label="Eliminar pedido"
+            style={{
+              padding: "8px 10px",
+              width: "auto",
+            }}
+          >
+            <Icons.Trash2 size={14} />
+          </button>
         </div>
       </div>
     </div>
