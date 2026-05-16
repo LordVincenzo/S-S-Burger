@@ -63,6 +63,7 @@ const DEFAULT_PRODUCTS = [
   { id: "Salchipapa_mixta", name: "S&S Mixta Salchipapa", price: 20000, image: "/img/salchipapa.png" },
   { id: "Salchipapa_especial", name: "S&S Especial Salchipapa", price: 32000, image: "/img/salchipapa.png" },
   { id: "Choripapa", name: "Choripapa", price: 14000, image: "/img/" },
+  { id: "Salchipapa_chikenSuiz", name: "Chiken Suiz", price: 20000, image: "/img/" },
   { id: "domicilio_1", name: "Domicilio", price: 1000, image: "/img/domicilio.png" },
   { id: "domicilio_2", name: "Domicilio", price: 2000, image: "/img/domicilio.png" },
 ];
