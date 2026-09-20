@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+/* =============================================================
+   Paleta de S&S Burger.
+   Heredada del diseño anterior (legacy/src/App.js) y pasada a
+   tokens de Tailwind v4 para no volver a escribir CSS a mano.
+   ============================================================= */
+
+@theme {
+  --color-brand-50: oklch(0.97 0.02 30);
+  --color-brand-100: oklch(0.93 0.05 30);
+  --color-brand-200: oklch(0.86 0.09 30);
+  --color-brand-400: oklch(0.66 0.16 30);
+  --color-brand-500: oklch(0.52 0.19 30);
+  --color-brand-600: oklch(0.46 0.18 30);
+  --color-brand-700: oklch(0.38 0.15 30);
+
+  --color-cream: oklch(0.97 0.008 75);
+  --color-ink: oklch(0.18 0.02 40);
+  --color-ink-muted: oklch(0.5 0.02 40);
+  --color-line: oklch(0.9 0.01 75);
+
+  --color-ok: oklch(0.52 0.15 152);
+  --color-ok-soft: oklch(0.95 0.05 152);
+  --color-warn: oklch(0.72 0.14 85);
+  --color-warn-soft: oklch(0.97 0.06 85);
+  --color-bad: oklch(0.52 0.2 25);
+  --color-bad-soft: oklch(0.97 0.04 25);
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 20px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* El teclado del celular no debe hacer zoom al enfocar un input. */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
+
+@layer utilities {
+  .animate-in-up {
+    animation: in-up 0.35s cubic-bezier(0.22, 0.68, 0, 1.2) both;
+  }
+
+  /* Oculta el scrollbar en las tiras horizontales de categorías. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -------------------------------------------------------------
+   Impresión: el comprobante sale limpio, sin el resto de la página.
+   Sustituye al truco de html2canvas del proyecto anterior, que
+   obligaba a arrancar la hoja de estilos por los colores oklch.
+   ------------------------------------------------------------- */
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /*
+     Cuando se abre el comprobante desde el panel, solo se imprime él.
+     El modal se monta como hijo directo de <body>, así que basta con
+     esconder a sus hermanos.
+  */
+  body.printing > *:not(#print-portal) {
+    display: none !important;
+  }
+
+  #print-portal {
+    position: static !important;
+    background: none !important;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+}
