@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Loader2,
   MessageCircle,
+  Navigation,
   Phone,
   Pencil,
   Receipt as ReceiptIcon,
@@ -26,6 +27,7 @@ import type {
   StoreSettings,
 } from "@/lib/database.types";
 import { cn, currency, formatTime, normalizePhone } from "@/lib/format";
+import { directionsUrl } from "@/lib/maps";
 import { STATUS_LABEL, nextStatus, whatsappLink, whatsappStatusMessage } from "@/lib/orders";
 import { RelativeTime } from "@/components/relative-time";
 
@@ -176,6 +178,7 @@ export function OrderCard({
         {order.order_type === "delivery" && (
           <p className="rounded-xl bg-cream px-3 py-2 text-xs">
             <span className="font-bold">Dirección:</span> {order.delivery_address}
+            {order.delivery_city && ` — ${order.delivery_city}`}
             {order.delivery_notes && (
               <span className="block text-ink-muted">{order.delivery_notes}</span>
             )}
@@ -204,6 +207,7 @@ export function OrderCard({
             orderId={order.id}
             zones={zones}
             address={order.delivery_address}
+            city={order.delivery_city}
             current={needsQuote ? null : order.delivery_fee}
             onDone={() => setQuoteOpen(false)}
           />
@@ -284,6 +288,19 @@ export function OrderCard({
           <ReceiptIcon className="size-4" />
           Comprobante
         </button>
+
+        {order.order_type === "delivery" && order.delivery_address && (
+          <a
+            href={directionsUrl(order.delivery_address, order.delivery_city)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Cómo llegar"
+            title="Cómo llegar"
+            className="grid size-10 place-items-center rounded-xl border border-line text-ink-muted"
+          >
+            <Navigation className="size-4" />
+          </a>
+        )}
 
         {phone && (
           <>

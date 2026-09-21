@@ -1,9 +1,4 @@
 -- =============================================================
--- S&S Burger — Actualización: el municipio va en la dirección
--- Seguro de ejecutar varias veces.
--- =============================================================
-
--- =============================================================
 -- S&S Burger — La ciudad es de la dirección, no del negocio
 --
 -- El local reparte en más de un municipio (Soledad y Barranquilla), y

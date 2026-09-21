@@ -30,6 +30,7 @@ async function requireAdmin() {
 
 function revalidateAdmin() {
   revalidatePath("/admin");
+  revalidatePath("/admin/entregas");
   revalidatePath("/admin/historial");
   revalidatePath("/admin/productos");
   revalidatePath("/admin/configuracion");
@@ -391,6 +392,9 @@ export async function saveSettings(
 const zoneSchema = z.object({
   id: z.uuid().optional(),
   name: z.string().trim().min(2, "Escribe el nombre de la zona").max(60),
+  // El municipio vive en la zona porque cada uno tiene su tarifa, y
+  // porque es lo que decide a dónde navega el repartidor.
+  city: z.string().trim().max(80).nullable().optional(),
   fee: z.number().int().min(0).max(1_000_000),
   is_active: z.boolean(),
   sort_order: z.number().int().min(0).max(999),
@@ -405,7 +409,8 @@ export async function saveDeliveryZone(
   const { supabase, admin } = await requireAdmin();
   if (!admin) return fail("Tu cuenta no tiene permisos de administrador");
 
-  const { id, ...values } = parsed.data;
+  const { id, ...parsedZone } = parsed.data;
+  const values = { ...parsedZone, city: parsedZone.city || null };
   const { error } = id
     ? await supabase.from("delivery_zones").update(values).eq("id", id)
     : await supabase.from("delivery_zones").insert(values);

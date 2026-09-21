@@ -21,8 +21,10 @@ const checkoutSchema = z
       .refine((value) => value.length >= 7, "El teléfono no es válido"),
     order_type: z.enum(["pickup", "delivery"]),
     // Sin delivery_zone_id a propósito: el cliente no cotiza su propio
-    // domicilio. Manda la dirección y el local le pone el valor.
+    // domicilio. Manda la dirección y el municipio, y el local le pone
+    // el valor.
     delivery_address: z.string().trim().max(200).optional().nullable(),
+    delivery_city: z.string().trim().max(80).optional().nullable(),
     delivery_notes: z.string().trim().max(200).optional().nullable(),
     customer_notes: z.string().trim().max(400).optional().nullable(),
     payment_method: z.string().trim().max(40).optional().nullable(),

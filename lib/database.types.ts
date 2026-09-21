@@ -49,6 +49,8 @@ export type DeliveryZone = {
   id: string;
   name: string;
   fee: number;
+  /** Municipio al que aplica la zona. Null = vale para cualquiera. */
+  city: string | null;
   sort_order: number;
   is_active: boolean;
   created_at: string;
@@ -80,6 +82,8 @@ export type Order = {
   customer_phone: string | null;
   delivery_zone_id: string | null;
   delivery_address: string | null;
+  /** Municipio declarado por el cliente: decide tarifa y navegación. */
+  delivery_city: string | null;
   delivery_notes: string | null;
   customer_notes: string | null;
   subtotal: number;
@@ -187,6 +191,7 @@ export type CreateOrderPayload = {
   /** Solo lo manda el panel: el cliente no cotiza su propio domicilio. */
   delivery_zone_id?: string | null;
   delivery_address?: string | null;
+  delivery_city?: string | null;
   delivery_notes?: string | null;
   customer_notes?: string | null;
   payment_timing?: PaymentTiming;
@@ -224,6 +229,7 @@ export type PublicOrder = {
   order_type: OrderType;
   customer_name: string;
   delivery_address: string | null;
+  delivery_city: string | null;
   customer_notes: string | null;
   subtotal: number;
   delivery_fee: number;

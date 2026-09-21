@@ -102,6 +102,7 @@ export function SettingsForm({ settings, zones }: Props) {
                 className={inputClass}
               />
             </Field>
+
           </div>
         </section>
 
@@ -201,45 +202,51 @@ function ZonesSection({ zones }: { zones: DeliveryZone[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ name: string; city: string; fee: string } | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
 
-  function save(zone: Partial<DeliveryZone> & { name: string; fee: number }) {
+  function save(
+    zone: Partial<DeliveryZone> & { name: string; fee: number; city: string | null },
+  ) {
     setError(null);
     startTransition(async () => {
       const result = await saveDeliveryZone({
         id: zone.id,
         name: zone.name,
+        city: zone.city,
         fee: zone.fee,
         is_active: zone.is_active ?? true,
         sort_order: zone.sort_order ?? zones.length + 1,
       });
-      if (!result.ok) setError(result.error);
-      else router.refresh();
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setDraft(null);
+      setEditing(null);
+      router.refresh();
     });
   }
 
-  function addZone() {
-    const name = window.prompt("Nombre de la zona (ej. Centro)");
-    if (!name) return;
-    const fee = window.prompt("Valor del domicilio en pesos (ej. 3000)");
-    if (fee === null) return;
-    save({ name, fee: Number(fee.replace(/\D/g, "") || 0) });
-  }
+  // Las zonas se agrupan por municipio: es como piensa quien las configura
+  // y como las va a ver el cliente al pedir.
+  const cities = [...new Set(zones.map((zone) => zone.city ?? "Sin municipio"))];
 
   return (
     <section className="mt-6 rounded-2xl border border-line bg-white p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-extrabold tracking-wide text-ink-muted uppercase">
             Zonas de domicilio
           </h2>
-          <p className="mt-1 text-xs text-ink-muted">
-            El domicilio ya no es un producto de la carta: va aparte, para que los
-            reportes separen lo que vendiste de comida de lo que cobraste por llevarla.
+          <p className="mt-1 max-w-md text-xs text-ink-muted">
+            Cada zona lleva su municipio y su tarifa. El cliente elige el municipio al
+            pedir; el valor lo pones tú viendo la dirección.
           </p>
         </div>
         <button
           type="button"
-          onClick={addZone}
+          onClick={() => setDraft({ name: "", city: cities[0] ?? "", fee: "" })}
           disabled={pending}
           className="flex items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-sm font-semibold"
         >
@@ -248,51 +255,189 @@ function ZonesSection({ zones }: { zones: DeliveryZone[] }) {
         </button>
       </div>
 
+      {draft && (
+        <div className="mb-3 grid gap-2 rounded-xl border border-brand-200 bg-brand-50 p-3 sm:grid-cols-[1fr_1fr_120px_auto]">
+          <input
+            autoFocus
+            value={draft.name}
+            onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+            placeholder="Nombre (ej. Centro)"
+            className={inputClass}
+          />
+          <input
+            value={draft.city}
+            onChange={(event) => setDraft({ ...draft, city: event.target.value })}
+            placeholder="Municipio (ej. Soledad)"
+            list="municipios-existentes"
+            className={inputClass}
+          />
+          <input
+            value={draft.fee}
+            onChange={(event) =>
+              setDraft({ ...draft, fee: event.target.value.replace(/\D/g, "") })
+            }
+            inputMode="numeric"
+            placeholder="Valor"
+            className={inputClass}
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={pending || draft.name.trim().length < 2}
+              onClick={() =>
+                save({
+                  name: draft.name,
+                  city: draft.city.trim() || null,
+                  fee: Number(draft.fee || 0),
+                })
+              }
+              className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+            >
+              Guardar
+            </button>
+            <button
+              type="button"
+              onClick={() => setDraft(null)}
+              className="rounded-xl border border-line px-3 py-2 text-sm font-semibold"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <datalist id="municipios-existentes">
+        {cities
+          .filter((city) => city !== "Sin municipio")
+          .map((city) => (
+            <option key={city} value={city} />
+          ))}
+      </datalist>
+
       {zones.length === 0 ? (
         <p className="rounded-xl border border-dashed border-line py-6 text-center text-xs text-ink-muted">
-          Sin zonas. Si no agregas ninguna, el domicilio va sin costo.
+          Sin zonas. Si no agregas ninguna, el domicilio va sin costo y no se le pregunta
+          el municipio al cliente.
         </p>
       ) : (
-        <ul className="space-y-2">
-          {zones.map((zone) => (
-            <li
-              key={zone.id}
-              className={cn(
-                "flex items-center gap-3 rounded-xl border p-3",
-                zone.is_active ? "border-line" : "border-dashed border-line opacity-60",
-              )}
-            >
-              <span className="flex-1 text-sm font-semibold">{zone.name}</span>
-              <span className="text-sm font-bold text-brand-600">{currency(zone.fee)}</span>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => {
-                  const fee = window.prompt(`Nuevo valor para ${zone.name}`, String(zone.fee));
-                  if (fee === null) return;
-                  save({ ...zone, fee: Number(fee.replace(/\D/g, "") || 0) });
-                }}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold"
-              >
-                Cambiar
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => save({ ...zone, is_active: !zone.is_active })}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold"
-              >
-                {zone.is_active ? "Desactivar" : "Activar"}
-              </button>
-            </li>
+        <div className="space-y-4">
+          {cities.map((city) => (
+            <div key={city}>
+              <p className="mb-1.5 text-xs font-extrabold text-ink-muted">{city}</p>
+              <ul className="space-y-2">
+                {zones
+                  .filter((zone) => (zone.city ?? "Sin municipio") === city)
+                  .map((zone) => (
+                    <li
+                      key={zone.id}
+                      className={cn(
+                        "rounded-xl border p-3",
+                        zone.is_active
+                          ? "border-line"
+                          : "border-dashed border-line opacity-60",
+                      )}
+                    >
+                      {editing === zone.id ? (
+                        <ZoneEditor
+                          zone={zone}
+                          pending={pending}
+                          onCancel={() => setEditing(null)}
+                          onSave={(values) => save({ ...zone, ...values })}
+                        />
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="flex-1 text-sm font-semibold">{zone.name}</span>
+                          <span className="text-sm font-bold text-brand-600">
+                            {currency(zone.fee)}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() => setEditing(zone.id)}
+                            className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold"
+                          >
+                            Cambiar
+                          </button>
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() =>
+                              save({ ...zone, is_active: !zone.is_active, city: zone.city })
+                            }
+                            className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold"
+                          >
+                            {zone.is_active ? "Desactivar" : "Activar"}
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
 
       {error && (
         <p className="mt-3 rounded-xl bg-bad-soft px-3 py-2 text-xs text-bad">{error}</p>
       )}
     </section>
+  );
+}
+
+function ZoneEditor({
+  zone,
+  pending,
+  onCancel,
+  onSave,
+}: {
+  zone: DeliveryZone;
+  pending: boolean;
+  onCancel: () => void;
+  onSave: (values: { name: string; city: string | null; fee: number }) => void;
+}) {
+  const [name, setName] = useState(zone.name);
+  const [city, setCity] = useState(zone.city ?? "");
+  const [fee, setFee] = useState(String(zone.fee));
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-[1fr_1fr_120px_auto]">
+      <input
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        className={inputClass}
+      />
+      <input
+        value={city}
+        onChange={(event) => setCity(event.target.value)}
+        placeholder="Municipio"
+        list="municipios-existentes"
+        className={inputClass}
+      />
+      <input
+        value={fee}
+        onChange={(event) => setFee(event.target.value.replace(/\D/g, ""))}
+        inputMode="numeric"
+        className={inputClass}
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => onSave({ name, city: city.trim() || null, fee: Number(fee || 0) })}
+          className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-bold text-white"
+        >
+          Guardar
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-xl border border-line px-3 py-2 text-sm font-semibold"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -18,12 +18,15 @@ export function DeliveryQuote({
   orderId,
   zones,
   address,
+  city,
   current,
   onDone,
 }: {
   orderId: string;
   zones: DeliveryZone[];
   address: string | null;
+  /** Municipio declarado por el cliente: acota las zonas que tienen sentido. */
+  city?: string | null;
   /** Valor ya aplicado, cuando se está corrigiendo en vez de cotizando. */
   current?: number | null;
   onDone?: () => void;
@@ -55,10 +58,18 @@ export function DeliveryQuote({
           : `Cambiar el valor del domicilio (hoy ${currency(current)})`}
       </p>
 
-      {address && <p className="mt-1 text-xs text-ink-muted">{address}</p>}
+      {address && (
+        <p className="mt-1 text-xs text-ink-muted">
+          {city ? `${address} — ${city}` : address}
+        </p>
+      )}
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        {zones.map((zone) => (
+        {/* Solo las zonas del municipio del cliente: las de la otra ciudad
+            no son una opción y solo estorban al elegir. */}
+        {zones
+          .filter((zone) => !city || !zone.city || zone.city === city)
+          .map((zone) => (
           <button
             key={zone.id}
             type="button"
@@ -67,8 +78,8 @@ export function DeliveryQuote({
             className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold disabled:opacity-50"
           >
             {zone.name} · {currency(zone.fee)}
-          </button>
-        ))}
+            </button>
+          ))}
 
         <button
           type="button"

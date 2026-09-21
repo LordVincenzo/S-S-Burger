@@ -60,6 +60,7 @@ export function CheckoutSheet({
   const [orderType, setOrderType] = useState<OrderType>(
     deliveryAllowed ? "delivery" : "pickup",
   );
+  const [city, setCity] = useState(saved.city ?? "");
   const [address, setAddress] = useState(saved.address ?? "");
   const [addressNotes, setAddressNotes] = useState(saved.addressNotes ?? "");
   const [comments, setComments] = useState("");
@@ -88,9 +89,16 @@ export function CheckoutSheet({
   const minOrder = settings?.min_order ?? 0;
   const belowMinimum = subtotal < minOrder;
 
+  // El municipio sí lo dice el cliente: es lo único que nadie puede saber
+  // por él, y de eso depende la tarifa. El valor en pesos sigue siendo
+  // decisión del local.
+  const cities = [...new Set(zones.map((zone) => zone.city).filter(Boolean))] as string[];
+
   // Solo orientativo. El valor real lo pone el local al ver la dirección,
   // así que aquí no se suma nada al total.
-  const fees = zones.map((z) => z.fee);
+  const fees = zones
+    .filter((zone) => !city || !zone.city || zone.city === city)
+    .map((zone) => zone.fee);
   const feeRange =
     fees.length === 0
       ? null
@@ -105,7 +113,7 @@ export function CheckoutSheet({
     try {
       window.localStorage.setItem(
         CUSTOMER_KEY,
-        JSON.stringify({ name, phone, address, addressNotes }),
+        JSON.stringify({ name, phone, address, addressNotes, city }),
       );
     } catch {
       /* opcional */
@@ -117,6 +125,7 @@ export function CheckoutSheet({
         customer_phone: phone,
         order_type: orderType,
         delivery_address: isDelivery ? address : null,
+        delivery_city: isDelivery ? city || null : null,
         delivery_notes: isDelivery ? addressNotes : null,
         customer_notes: comments || null,
         payment_method: payment,
@@ -300,6 +309,28 @@ export function CheckoutSheet({
 
               {isDelivery && (
                 <>
+                  {cities.length > 0 && (
+                    <Field label="¿En qué municipio estás?">
+                      <div className="grid grid-cols-2 gap-2">
+                        {cities.map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => setCity(option)}
+                            className={cn(
+                              "rounded-xl border py-2.5 text-sm font-bold transition",
+                              city === option
+                                ? "border-brand-500 bg-brand-50 text-brand-700"
+                                : "border-line text-ink-muted",
+                            )}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </Field>
+                  )}
+
                   <Field label="Dirección">
                     <input
                       required
@@ -407,7 +438,7 @@ export function CheckoutSheet({
 
               <button
                 type="submit"
-                disabled={pending}
+                disabled={pending || (isDelivery && cities.length > 0 && !city)}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3.5 text-base font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
               >
                 {pending && <Loader2 className="size-4 animate-spin" />}
@@ -430,7 +461,7 @@ export function CheckoutSheet({
 const CUSTOMER_KEY = "ssburger_customer_v1";
 
 type SavedCustomer = Partial<
-  Record<"name" | "phone" | "address" | "addressNotes" | "zoneId", string>
+  Record<"name" | "phone" | "address" | "addressNotes" | "city", string>
 >;
 
 function readSavedCustomer(): SavedCustomer {

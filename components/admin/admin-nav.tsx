@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, History, LogOut, Settings, UtensilsCrossed } from "lucide-react";
+import { Bike, ClipboardList, History, LogOut, Settings, UtensilsCrossed } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const LINKS = [
   { href: "/admin", label: "Pedidos", icon: ClipboardList },
+  { href: "/admin/entregas", label: "Entregas", icon: Bike },
   { href: "/admin/historial", label: "Historial", icon: History },
   { href: "/admin/productos", label: "Carta", icon: UtensilsCrossed },
   { href: "/admin/configuracion", label: "Ajustes", icon: Settings },
