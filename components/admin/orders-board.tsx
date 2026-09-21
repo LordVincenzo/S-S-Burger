@@ -240,6 +240,7 @@ export function OrdersBoard({
         products={products}
         categories={categories}
         zones={zones}
+        settings={settings}
       />
     </div>
   );

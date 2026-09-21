@@ -1,4 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 
 import { currency, formatDateTime } from "@/lib/format";
 
@@ -41,6 +42,13 @@ export function Receipt({ data }: { data: ReceiptData }) {
   return (
     <div className="print-sheet mx-auto w-full max-w-sm rounded-2xl border border-line bg-white p-6 text-ink">
       <div className="text-center">
+        <Image
+          src="/img/logo_ss.png"
+          alt=""
+          width={64}
+          height={64}
+          className="mx-auto mb-2 size-16 object-contain"
+        />
         <h2 className="text-lg font-extrabold tracking-tight">{data.storeName}</h2>
         {data.storeAddress && <p className="text-xs text-ink-muted">{data.storeAddress}</p>}
         {data.storePhone && <p className="text-xs text-ink-muted">Tel. {data.storePhone}</p>}

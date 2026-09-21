@@ -150,6 +150,8 @@ const manualOrderSchema = z.object({
   customer_notes: z.string().trim().max(400).optional().nullable(),
   mark_paid: z.boolean().optional(),
   payment_method: z.string().trim().max(40).optional().nullable(),
+  payment_ref: z.string().trim().max(60).optional().nullable(),
+  cash_received: z.number().int().min(0).nullable().optional(),
   items: z
     .array(
       z.object({
@@ -160,6 +162,8 @@ const manualOrderSchema = z.object({
     )
     .min(1, "Agrega al menos un producto"),
 });
+
+export type ManualOrderInput = z.input<typeof manualOrderSchema>;
 
 /** Pedido tomado por teléfono o en mostrador. Entra por la misma puerta que el online. */
 export async function createManualOrder(

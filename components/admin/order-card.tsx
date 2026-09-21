@@ -262,27 +262,28 @@ export function OrderCard({
             Registrar pago
           </button>
         ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => setReceiptOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-line px-3 py-2.5 text-sm font-bold"
-            >
-              <ReceiptIcon className="size-4" />
-              Comprobante
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => run(() => markOrderUnpaid(order.id))}
-              aria-label="Deshacer el pago"
-              title="Deshacer el pago"
-              className="grid size-10 place-items-center rounded-xl border border-line text-ink-muted"
-            >
-              <Undo2 className="size-4" />
-            </button>
-          </>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => run(() => markOrderUnpaid(order.id))}
+            aria-label="Deshacer el pago"
+            title="Deshacer el pago"
+            className="grid size-10 place-items-center rounded-xl border border-line text-ink-muted"
+          >
+            <Undo2 className="size-4" />
+          </button>
         )}
+
+        {/* Un pedido sin cobrar también necesita comprobante: es la
+            confirmación que el cliente espera al momento de pedir. */}
+        <button
+          type="button"
+          onClick={() => setReceiptOpen(true)}
+          className="flex items-center gap-1.5 rounded-xl border border-line px-3 py-2.5 text-sm font-bold"
+        >
+          <ReceiptIcon className="size-4" />
+          Comprobante
+        </button>
 
         {phone && (
           <>
@@ -366,6 +367,7 @@ export function OrderCard({
       <ReceiptModal
         open={receiptOpen}
         onClose={() => setReceiptOpen(false)}
+        token={order.public_token}
         data={{
           code: order.code,
           createdAt: order.created_at,

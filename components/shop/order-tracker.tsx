@@ -271,6 +271,7 @@ export function OrderTracker({ token, initialOrder, settings, justCreated }: Pro
       <ReceiptModal
         open={receiptOpen}
         onClose={() => setReceiptOpen(false)}
+        token={token}
         data={{
           code: order.code,
           createdAt: order.created_at,
