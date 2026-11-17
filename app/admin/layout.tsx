@@ -1,6 +1,6 @@
 import { ShieldAlert } from "lucide-react";
 
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Panel", robots: { index: false } };
@@ -37,10 +37,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     );
   }
 
-  return (
-    <div className="min-h-dvh">
-      <AdminNav email={user.email ?? ""} />
-      <div className="mx-auto max-w-6xl px-4 py-6">{children}</div>
-    </div>
-  );
+  return <AdminShell email={user.email ?? ""}>{children}</AdminShell>;
 }

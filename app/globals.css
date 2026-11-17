@@ -66,6 +66,36 @@
   }
 }
 
+/* -------------------------------------------------------------
+   Panel nuevo (/admin/new): la misma app con otra paleta.
+   Los componentes que ya existían leen estos mismos tokens, así
+   que cambian de color aquí dentro sin tener que tocarlos.
+   ------------------------------------------------------------- */
+.panel-new {
+  --color-brand-50: #eef3fd;
+  --color-brand-100: #dbe5fb;
+  --color-brand-200: #c9d6f5;
+  --color-brand-400: #5a80e0;
+  --color-brand-500: #2f5bd0;
+  --color-brand-600: #274cb0;
+  --color-brand-700: #1e3a8a;
+
+  --color-cream: #f1f0ee;
+  --color-ink: #1f1d1a;
+  --color-ink-muted: #5f5b55;
+  --color-line: #e4e2de;
+
+  --color-ok: #15803d;
+  --color-ok-soft: #e7f4ec;
+  --color-warn: #c99a1a;
+  --color-warn-soft: #fdf3d7;
+  --color-bad: #b3261e;
+  --color-bad-soft: #fbe4e2;
+
+  background: #f7f7f5;
+  color: var(--color-ink);
+}
+
 @keyframes in-up {
   from {
     opacity: 0;
