@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertCircle, Download, MessageCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import type { OrderWithItems, StoreSettings } from "@/lib/database.types";
@@ -26,6 +26,8 @@ function shiftDay(day: string, delta: number) {
 
 export function HistoryView({ orders, from, to, settings, loadError }: Props) {
   const router = useRouter();
+  // La misma vista se usa en /admin/historial y en /admin/new/historial.
+  const pathname = usePathname();
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const report = useMemo(() => buildReport(orders), [orders]);
@@ -39,7 +41,7 @@ export function HistoryView({ orders, from, to, settings, loadError }: Props) {
   ];
 
   const go = (nextFrom: string, nextTo: string) =>
-    router.push(`/admin/historial?desde=${nextFrom}&hasta=${nextTo}`);
+    router.push(`${pathname}?desde=${nextFrom}&hasta=${nextTo}`);
 
   function downloadCsv() {
     const blob = new Blob([ordersToCsv(orders)], { type: "text/csv;charset=utf-8;" });
